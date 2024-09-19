@@ -45,7 +45,7 @@ npm start
 
 # How to use the application
 
-  Input data are stored in **inputdata** folder at project level.
+  Input data are stored in **stock_price_data_files** folder at project level.
 
   If running in production mode access the app at: http://localhost:3000/
   If running in development mode acces the app at: http://localhost:5173/
@@ -53,7 +53,7 @@ npm start
   Select Reccomended number of files to be sampled for each Stock Exchange
   Press the Predict button
 
-  Follow the output csv files in **outputdata** folder at project level in subfolder named as current datetime.
+  Follow the output csv files in **stock_price_prediction_files** folder at project level in subfolder named as current datetime.
 
 
 ## Steps creating the project
@@ -64,5 +64,7 @@ npm start
 
 ## Resouces
   - Mardown basic syntax https://www.markdownguide.org/basic-syntax/
+  - Use tiny-glob module to find csv data files https://www.npmjs.com/package/tiny-glob
+  - Use xlsx (SheetJS) module to parse csv files https://www.npmjs.com/package/xlsx
 
 
