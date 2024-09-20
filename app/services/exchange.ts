@@ -3,6 +3,9 @@ import glob from 'tiny-glob';
 import fs, {readFileSync} from "fs";
 import readline from 'readline';
 
+import date from 'date-and-time';
+
+
 export type CSVFiles = {
     fullFilePath: string;
     exchange: string,
@@ -22,8 +25,8 @@ export async function ListDataFiles(basePath: string = './stock_price_data_files
             stockfile: parts[2]
         };
         datafiles.push( df );
-        const n = await Read10ConsecutiveRandomDataPoints(p);
-        console.log("10ConsecutiveRandomDataPoints: " + JSON.stringify(n))
+        const n = Predict3DataPoints( await Read10ConsecutiveRandomDataPoints(p));
+        console.log("Predict3DataPoints(10ConsecutiveRandomDataPoints): " + JSON.stringify(n))
 
     }    
     //console.log(datafiles);
@@ -32,7 +35,7 @@ export async function ListDataFiles(basePath: string = './stock_price_data_files
 
 export type CSVRecord = {
     stockId: string,
-    timestamp: string,
+    timestamp: Date,
     stockPrice: number
 }
 
@@ -72,7 +75,7 @@ function RandomUpTo(max: number) {
 
 export async function Read10ConsecutiveRandomDataPoints(csvPath: string): Promise<string[]>{
 
-    let result: string[] = [];
+    let result = [] as string[];
 
     const n = await CountLinesInCSVFile(csvPath);
 
@@ -127,3 +130,85 @@ export async function Read10ConsecutiveRandomDataPoints(csvPath: string): Promis
     return result;
 }
 
+export type DataPointsValidLines = {
+    datapoint?: string[],
+    error?: string
+}
+
+//return 13 DataPoints from 10 DataPoints
+export function Predict3DataPoints(records10: string[]): DataPointsValidLines{
+
+    let result = {} as DataPointsValidLines;
+
+    //check if record10 has length 10
+    if(records10.length != 10) {result.error="Datapoints set is not of length 10"; return result;}
+  
+    //parse check if input DataPoints are valid values
+    let parsedDataPoints: CSVRecord[] = [];
+    for (const line of records10){
+        const parts = line.split(',');
+        if(parts.length != 3) {result.error="Can not parse datapoint csv line: " + line; return result;}
+        let stockId = '';
+        let timestamp = new Date();
+        let stockPrice = -1;
+        try{
+            stockId = parts[0];
+            if (stockId == "") {result.error="Can not parse stockId in datapoint csv line: " + line; return result;}
+            const timestampString = parts[1];
+            timestamp = date.parse(timestampString, 'DD-MM-YYYY');
+            const dts = date.format(timestamp, 'DD-MM-YYYY');
+            if ( timestampString != dts ) {result.error="Can not parse timestamp in datapoint csv line: " + line; return result;}
+            stockPrice = parseFloat(parts[2]);
+            if ( stockPrice <= 0 ) {result.error="Can not parse stock price in datapoint csv line: " + line; return result;}
+        }
+        catch(e){
+            {result.error="Can not parse values in datapoint csv line: " + line; return result;}
+        }
+        const newCSVRecord = {
+            stockId: stockId,
+            timestamp: timestamp,
+            stockPrice: stockPrice
+        } as CSVRecord;
+
+        parsedDataPoints.push(newCSVRecord);
+    }
+
+    result.datapoint = [...records10]; //keep first 10 records
+
+    //Prediction logic for next 3 records
+    
+    //n+1 datapoint prediction
+    let highest = parsedDataPoints[0].stockPrice;
+    let secondHighest = -Infinity;
+    for (let i = 1; i < parsedDataPoints.length; i++) {
+      if (parsedDataPoints[i].stockPrice > highest) {
+        secondHighest = highest;
+        highest = parsedDataPoints[i].stockPrice;
+      } else if (parsedDataPoints[i].stockPrice < highest && parsedDataPoints[i].stockPrice > secondHighest) {
+        secondHighest = parsedDataPoints[i].stockPrice;
+      }
+    }
+
+    const n1_stockId = parsedDataPoints[9].stockId;
+    const n1_timestamp = date.format(date.addDays(parsedDataPoints[9].timestamp, 1), 'DD-MM-YYYY');
+    const n1_stockPrice = secondHighest;
+
+    const n1_line = `${n1_stockId},${n1_timestamp},${n1_stockPrice}`;
+    result.datapoint.push(n1_line);
+
+    //n+2 datapoint prediction
+    const n2_stockId = parsedDataPoints[9].stockId;
+    const n2_timestamp = date.format(date.addDays(parsedDataPoints[9].timestamp, 2), 'DD-MM-YYYY');
+    const n2_stockPrice = Math.round(( n1_stockPrice + (n1_stockPrice - parsedDataPoints[9].stockPrice) / 2 + Number.EPSILON) * 100) / 100;
+    const n2_line = `${n2_stockId},${n2_timestamp},${n2_stockPrice}`;
+    result.datapoint.push(n2_line);
+
+    //n+3 datapoint prediction
+    const n3_stockId = parsedDataPoints[9].stockId;
+    const n3_timestamp = date.format(date.addDays(parsedDataPoints[9].timestamp, 3), 'DD-MM-YYYY');
+    const n3_stockPrice = Math.round(( n2_stockPrice + (n2_stockPrice - n1_stockPrice) / 4 + Number.EPSILON) * 100) / 100;
+    const n3_line = `${n3_stockId},${n3_timestamp},${n3_stockPrice}`;
+    result.datapoint.push(n3_line);
+
+    return result;
+}

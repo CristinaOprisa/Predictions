@@ -66,5 +66,8 @@ npm start
   - Mardown basic syntax https://www.markdownguide.org/basic-syntax/
   - Use tiny-glob module to find csv data files https://www.npmjs.com/package/tiny-glob
   - Use readline https://nodejs.org/docs/latest-v20.x/api/readline.html and example from https://medium.com/hail-trace/effortlessly-reading-files-line-by-line-in-node-js-7775f27c40cc
+  - Use date-and-time
+ module to parse and format dates https://www.npmjs.com/package/date-and-time
+ - Find second highest price in prediction alghorithm https://umarfarooquekhan.medium.com/find-the-second-largest-element-in-an-array-using-a-single-loop-in-javascript-dbeb0c42c58d
 
 
