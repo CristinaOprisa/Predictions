@@ -65,6 +65,6 @@ npm start
 ## Resouces
   - Mardown basic syntax https://www.markdownguide.org/basic-syntax/
   - Use tiny-glob module to find csv data files https://www.npmjs.com/package/tiny-glob
-  - Use xlsx (SheetJS) module to parse csv files https://www.npmjs.com/package/xlsx
+  - Use readline https://nodejs.org/docs/latest-v20.x/api/readline.html and example from https://medium.com/hail-trace/effortlessly-reading-files-line-by-line-in-node-js-7775f27c40cc
 
 
