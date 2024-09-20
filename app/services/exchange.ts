@@ -12,6 +12,11 @@ export type CSVFiles = {
     stockfile: string,
   }
 
+export type DataPointsValidLines = {
+    datapoint?: string[],
+    error?: string
+  }
+
 export async function ListDataFiles(basePath: string = './stock_price_data_files') : Promise<CSVFiles[]>{
     const paths = await glob(basePath + '/*/*');
     const datafiles = [] as CSVFiles[];
@@ -25,9 +30,15 @@ export async function ListDataFiles(basePath: string = './stock_price_data_files
             stockfile: parts[2]
         };
         datafiles.push( df );
-        const n = Predict3DataPoints( await Read10ConsecutiveRandomDataPoints(p));
-        console.log("Predict3DataPoints(10ConsecutiveRandomDataPoints): " + JSON.stringify(n))
 
+        const consecutives10 = await Read10ConsecutiveRandomDataPoints(p);
+        if (consecutives10.error) {console.log("Error: " + consecutives10.error)}
+        else{
+          const n = Predict3DataPoints( consecutives10.datapoint!);
+          console.log("Predict3DataPoints(10ConsecutiveRandomDataPoints): " + JSON.stringify(n))
+        }
+
+      
     }    
     //console.log(datafiles);
     return datafiles;
@@ -39,6 +50,7 @@ export type CSVRecord = {
     stockPrice: number
 }
 
+//Return -1 on error or number of lines
 async function CountLinesInCSVFile(csvPath: string): Promise<number> {
     try {
       //Credit to : https://medium.com/hail-trace/effortlessly-reading-files-line-by-line-in-node-js-7775f27c40cc
@@ -46,7 +58,8 @@ async function CountLinesInCSVFile(csvPath: string): Promise<number> {
       const fileStream = fs.createReadStream(csvPath);
   
       fileStream.on('error', (err) => {
-        console.error(`Error reading file: ${err.message}`);
+        //console.error(`Error reading file: ${err.message}`);
+        return -1;
       });
   
       const rl = readline.createInterface({
@@ -60,8 +73,8 @@ async function CountLinesInCSVFile(csvPath: string): Promise<number> {
       }
       return result;
     } catch (err: any) {
-      console.error(`Error processing file: ${err.message}`);
-      return 0;
+      //console.error(`Error processing file: ${err.message}`);
+      return -1;
     }
   }
 
@@ -73,18 +86,20 @@ function RandomUpTo(max: number) {
     );
 }
 
-export async function Read10ConsecutiveRandomDataPoints(csvPath: string): Promise<string[]>{
+export async function Read10ConsecutiveRandomDataPoints(csvPath: string): Promise<DataPointsValidLines>{
 
-    let result = [] as string[];
+    let result = {} as DataPointsValidLines;
 
     const n = await CountLinesInCSVFile(csvPath);
 
     //check if n>=10
+    if (n<10) {result.error="Datapoints set " + csvPath + " is not of minimum length 10"; return result;}
 
     const r = RandomUpTo(n-9);
 
-    console.log("Random: " + r);
+    //console.log("Random: " + r);
 
+    let resultLines = [] as string[];
 
     //Skip r-1 lines from csv file and reaturn next 10
     try {
@@ -93,7 +108,9 @@ export async function Read10ConsecutiveRandomDataPoints(csvPath: string): Promis
         const fileStream = fs.createReadStream(csvPath);
     
         fileStream.on('error', (err) => {
-          console.error(`Error reading file: ${err.message}`);
+          //console.error(`Error reading file: ${err.message}`);
+          result.error=`Error: ${err.message} reading file: ${csvPath}`; 
+          return result;
         });
     
         const rl = readline.createInterface({
@@ -107,7 +124,7 @@ export async function Read10ConsecutiveRandomDataPoints(csvPath: string): Promis
 
           if (lineNumber >= r){
             //console.log("" + lineNumber + " " + line);
-            result.push(line);
+            resultLines.push(line);
           }
           else{
             //console.log("Skip line: " + lineNumber)
@@ -119,21 +136,15 @@ export async function Read10ConsecutiveRandomDataPoints(csvPath: string): Promis
             break;
           }
         }
+        result.datapoint = [...resultLines];
         return result;
       } catch (err: any) {
-        console.error(`Error processing file: ${err.message}`);
+        //console.error(`Error processing file: ${err.message}`);
+        result.error=`Error: ${err.message} processing file: ${csvPath}`;
         return result;
       }
-    
-  
-
-    return result;
 }
 
-export type DataPointsValidLines = {
-    datapoint?: string[],
-    error?: string
-}
 
 //return 13 DataPoints from 10 DataPoints
 export function Predict3DataPoints(records10: string[]): DataPointsValidLines{
@@ -158,7 +169,10 @@ export function Predict3DataPoints(records10: string[]): DataPointsValidLines{
             timestamp = date.parse(timestampString, 'DD-MM-YYYY');
             const dts = date.format(timestamp, 'DD-MM-YYYY');
             if ( timestampString != dts ) {result.error="Can not parse timestamp in datapoint csv line: " + line; return result;}
-            stockPrice = parseFloat(parts[2]);
+            const stockPriceString: string = parts[2] as string;
+            const isNumeric = /^[+-]?\d+(\.\d+)?$/.test(stockPriceString);
+            if ( !isNumeric ) {result.error="Can not parse numeric stock price in datapoint csv line: " + line; return result;}
+            stockPrice = parseFloat(stockPriceString);
             if ( stockPrice <= 0 ) {result.error="Can not parse stock price in datapoint csv line: " + line; return result;}
         }
         catch(e){
