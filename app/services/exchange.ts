@@ -1,106 +1,15 @@
-import glob from 'tiny-glob';
-
 import fs from "fs";
 import readline from 'readline';
 
 import date from 'date-and-time';
 
 
-export type CSVFiles = {
-    fullFilePath: string;
-    exchange: string;
-    stockfile: string;
-  }
-
 export type DataPointsLinesResponse = {
     datapoint?: string[],
     error?: string
   }
 
-export type ProcessFilesResponse = {
-  response?: any;
-  status: "success"|"failed";
-  error?: string;
-}
-export async function ProcessFiles(nf: number): Promise<ProcessFilesResponse>
-{
-  const allExchangesCSVFiles: Map<string, CSVFiles[]> = await ListDataFiles();
-
-
-  for (let [exchangeName, exchangeCSVFilesArray] of allExchangesCSVFiles) {
-    console.log("exchangeName: " + exchangeName + " exchange CSV Files: " + JSON.stringify(exchangeCSVFilesArray));
-    let processedFiles: number = 0;
-    let csvFileIndexInCurrentExchange: number = -1;
-    while (processedFiles < nf && csvFileIndexInCurrentExchange + 1 < exchangeCSVFilesArray.length){
-      
-      //Take next unprocessed available file
-      csvFileIndexInCurrentExchange++;
-      const dataFile = exchangeCSVFilesArray[csvFileIndexInCurrentExchange];
-
-      const consecutives10: DataPointsLinesResponse = await Read10ConsecutiveRandomDataPoints(dataFile.fullFilePath);
-      if (consecutives10.error) {
-        //console.log("Error: " + consecutives10.error)
-        //Can not process this csv file, skip it
-        csvFileIndexInCurrentExchange++;
-      }
-      else{
-        const predict3DataPoints: DataPointsLinesResponse = Predict3DataPoints( consecutives10.datapoint!);
-        console.log("Predict3DataPoints(10ConsecutiveRandomDataPoints): " + JSON.stringify(predict3DataPoints));
-
-        if (predict3DataPoints.error) {
-          //Can not predict 3 point for this csv file, skip it
-          csvFileIndexInCurrentExchange++;
-        }
-        else {
-          //Save prediction in output folder
-          //F(consecutives10.datapoint, basepath, df) // write lines to csv file
-          csvFileIndexInCurrentExchange++;
-          processedFiles++;
-        }
-        
-      }
-
-
-      processedFiles++;
-    }
-
-    if (processedFiles < nf && exchangeCSVFilesArray.length >= nf){
-      return {
-        status: 'failed',
-        error: `Can not process ${nf} files for exchange ${exchangeName} from ${exchangeCSVFilesArray.length} existing data files`
-      }
-    }
-  }
-
-
-  return {
-    status: 'success'
-  };
-}
-
-export async function ListDataFiles(basePath: string = './stock_price_data_files') : Promise<Map<string, CSVFiles[]>>{
-
-    let exchangeFiles: Map<string, CSVFiles[]> = new Map<string, CSVFiles[]>();
-
-    const paths = await glob(basePath + '/*/*');
-
-    for (const p of paths){
-        const parts = p.split('\\'); //TODO: test on linux also, maybe split on / character
-        //console.log(parts);
-        const df = {
-            fullFilePath: p,
-            exchange: parts[1], 
-            stockfile: parts[2]
-        };
-
-        if (!exchangeFiles.has(df.exchange)) {exchangeFiles.set(df.exchange, [] as CSVFiles[]);}
-        exchangeFiles.get(df.exchange)!.push(df);
-      
-    }    
-    return exchangeFiles;
-}
-
-export type CSVRecord = {
+  type CSVRecord = {
     stockId: string,
     timestamp: Date,
     stockPrice: number
@@ -142,6 +51,7 @@ function RandomUpTo(max: number) {
     );
 }
 
+//return 10 consecutive DataPoints
 export async function Read10ConsecutiveRandomDataPoints(csvPath: string): Promise<DataPointsLinesResponse>{
 
     let result = {} as DataPointsLinesResponse;

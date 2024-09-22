@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, useLoaderData, Link } from "@remix-run/react";
-import { ProcessFiles, ProcessFilesResponse } from "~/services/exchange";
+import { ProcessFiles, ProcessFilesResponse } from "~/services/processfiles.server";
 
 type LoaderResponse = {
   response?: {
@@ -44,7 +44,7 @@ export default function RouteComponent(){
   } else {
     return (
       <>
-        <div>{JSON.stringify(data.response)}</div>
+        <p>Prediction files were generated</p>
         <br/>
         <Link to="/">
           <span className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
