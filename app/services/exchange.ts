@@ -8,8 +8,8 @@ import date from 'date-and-time';
 
 export type CSVFiles = {
     fullFilePath: string;
-    exchange: string,
-    stockfile: string,
+    exchange: string;
+    stockfile: string;
   }
 
 export type DataPointsValidLines = {
@@ -35,7 +35,9 @@ export async function ListDataFiles(basePath: string = './stock_price_data_files
         if (consecutives10.error) {console.log("Error: " + consecutives10.error)}
         else{
           const n = Predict3DataPoints( consecutives10.datapoint!);
-          console.log("Predict3DataPoints(10ConsecutiveRandomDataPoints): " + JSON.stringify(n))
+          console.log("Predict3DataPoints(10ConsecutiveRandomDataPoints): " + JSON.stringify(n));
+
+          //F(consecutives10.datapoint, basepath, df) // write lines to csv file
         }
 
       

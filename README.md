@@ -69,5 +69,8 @@ npm start
   - Use date-and-time
  module to parse and format dates https://www.npmjs.com/package/date-and-time
  - Find second highest price in prediction alghorithm https://umarfarooquekhan.medium.com/find-the-second-largest-element-in-an-array-using-a-single-loop-in-javascript-dbeb0c42c58d
+ - Remix routes dynamic segments https://remix.run/docs/en/main/file-conventions/routes#dynamic-segments
+ - Remix component Link https://remix.run/docs/en/main/components/link
+ - React Select onChange event https://medium.com/@dev.ngodeid/understanding-the-react-select-dropdown-onchange-event-handler-d4e5a3f2d2e5
 
 
