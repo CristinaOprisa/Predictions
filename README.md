@@ -13,7 +13,7 @@
 
   Checkout:
   ```shellscript
-  git clone https://github.com/YOUR-USERNAME/YOUR-REPOSITORY
+  git clone https://github.com/CristinaOprisa/Predictions
   ```
 
   Change current directory to project folder and install dependencies:
