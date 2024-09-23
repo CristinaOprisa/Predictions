@@ -13,7 +13,6 @@ type CSVFiles = {
   }
 
 export type ProcessFilesResponse = {
-    response?: any;
     status: "success"|"failed";
     error?: string;
   }
@@ -27,7 +26,7 @@ export async function ProcessFiles(nf: number): Promise<ProcessFilesResponse>
     const allExchangesCSVFiles: Map<string, CSVFiles[]> = await ListDataFiles(baseInputPath);
   
   
-    for (let [exchangeName, exchangeCSVFilesArray] of allExchangesCSVFiles) {
+    for (const [exchangeName, exchangeCSVFilesArray] of allExchangesCSVFiles) {
       //console.log("exchangeName: " + exchangeName + " exchange CSV Files: " + JSON.stringify(exchangeCSVFilesArray));
       let processedFiles: number = 0;
       let csvFileIndexInCurrentExchange: number = -1;
@@ -54,7 +53,7 @@ export async function ProcessFiles(nf: number): Promise<ProcessFilesResponse>
           }
           else {
             //Save prediction in output folder
-            const bWriteFileSuccess = await WriteCSVFile(`${baseOutputPath}/${randomOutputSubfolder}`, dataFile.exchange, dataFile.stockfile, predict3DataPoints.datapoint!);
+            const bWriteFileSuccess = await WriteCSVFile(baseOutputPath, randomOutputSubfolder, dataFile.exchange, dataFile.stockfile, predict3DataPoints.datapoint!);
             
             if (!bWriteFileSuccess) {
                 //critical error can not write output files
@@ -87,7 +86,7 @@ export async function ProcessFiles(nf: number): Promise<ProcessFilesResponse>
 
 async function ListDataFiles(basePath: string = './stock_price_data_files') : Promise<Map<string, CSVFiles[]>>{
 
-    let exchangeFiles: Map<string, CSVFiles[]> = new Map<string, CSVFiles[]>();
+    const exchangeFiles: Map<string, CSVFiles[]> = new Map<string, CSVFiles[]>();
 
     const paths = await glob(basePath + '/*/*');
 
@@ -107,7 +106,7 @@ async function ListDataFiles(basePath: string = './stock_price_data_files') : Pr
     return exchangeFiles;
 }
 
-async function WriteCSVFile(basePath: string = './stock_price_prediction_files', exchangeName: string, fileName: string, records: string[]): Promise<boolean>
+async function WriteCSVFile(basePath: string = './stock_price_prediction_files', resultSubfolder: string, exchangeName: string, fileName: string, records: string[]): Promise<boolean>
 {
     //Create base folder and exchange subfolder
     //https://nodejs.org/en/learn/manipulating-files/working-with-folders-in-nodejs
@@ -115,8 +114,11 @@ async function WriteCSVFile(basePath: string = './stock_price_prediction_files',
         if (!fs.existsSync(basePath)) {
           fs.mkdirSync(basePath);
         }
-        if (!fs.existsSync(`${basePath}/${exchangeName}`)) {
-          fs.mkdirSync(`${basePath}/${exchangeName}`);
+        if (!fs.existsSync(`${basePath}/${resultSubfolder}`)) {
+          fs.mkdirSync(`${basePath}/${resultSubfolder}`);
+        }
+        if (!fs.existsSync(`${basePath}/${resultSubfolder}/${exchangeName}`)) {
+          fs.mkdirSync(`${basePath}/${resultSubfolder}/${exchangeName}`);
         }
     } catch (err) {
         //console.error(err);
@@ -124,7 +126,7 @@ async function WriteCSVFile(basePath: string = './stock_price_prediction_files',
     }
 
     try {
-        fs.writeFileSync(`${basePath}/${exchangeName}/${fileName}`, records.join('\r\n')+'\r\n');
+        fs.writeFileSync(`${basePath}/${resultSubfolder}/${exchangeName}/${fileName}`, records.join('\r\n')+'\r\n');
       } catch (err) {
         //console.error(err);
         return false;

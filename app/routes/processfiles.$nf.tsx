@@ -10,7 +10,7 @@ type LoaderResponse = {
   error?: string;
 }
 
-export const loader = async ({ request, params }: LoaderFunctionArgs) => {
+export const loader = async ({ params }: LoaderFunctionArgs) => {
 
   if (!params.nf) {return json ({error: "Missing number of files to be processed"})}
   if (params.nf != "1" && params.nf != "2") {return json ({error: "Invalid number of files to be processed"})}
